@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Resolve absolute path relative to script execution location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PREFIX="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+SYSROOT="/home/kanan/freelinix/sysroot/x86_64-linux-musl"
+TARGET="x86_64-unknown-linux-musl"
+
+exec "$PREFIX/bin/clang++" \
+  --target=$TARGET \
+  --sysroot="$SYSROOT" \
+  -stdlib=libc++ \
+  -rtlib=compiler-rt \
+  -unwindlib=libunwind \
+  -fuse-ld=lld \
+  -static \
+  -I"$PREFIX/include/c++/v1" \
+  -L"$PREFIX/lib/$TARGET" \
+  -lc++ -lc++abi -lunwind \
+  "$@"

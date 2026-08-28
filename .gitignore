@@ -1,0 +1,14 @@
+# Ignore build directories
+llvm-build/
+llvm-project/
+musl-src/
+
+# Ignore heavy binaries and libraries
+toolchain/
+sysroot/
+*.a
+*.so
+*.so.*
+*.o
+*.tar.gz
+test
