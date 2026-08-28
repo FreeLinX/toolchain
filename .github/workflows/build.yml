@@ -8,31 +8,47 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake ninja-build build-essential python3 git curl tar
 
-    - name: Build Portable Toolchain
+    - name: Download and Build LLVM/Clang (Portable)
       run: |
-        mkdir -p bin include lib
-        # Statik flaqlar vasitəsilə host glibc asılılığını aradan qaldırırıq
-        echo "int main() {}" > test.c
-        gcc -static test.c -o bin/freelinix-cc
-        cp bin/freelinix-cc bin/clang
-        cp bin/freelinix-cc bin/clang++
-        cp bin/freelinix-cc bin/ld.lld
+        # LLVM project-ni endiririk (və ya mövcud submodules/source istifadə edirik)
+        git clone --depth 1 --branch llvmorg-18.1.8 https://github.com/llvm/llvm-project.git llvm-project-src
+        
+        mkdir -p llvm-build && cd llvm-build
+        cmake -G Ninja ../llvm-project-src/llvm \
+          -DLLVM_ENABLE_PROJECTS="clang;lld" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DLLVM_TARGETS_TO_BUILD="X86" \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DLLVM_INCLUDE_TESTS=OFF
+        
+        ninja clang lld
 
     - name: Package Toolchain
       run: |
-        tar -czvf freelinix-toolchain-x86_64.tar.gz bin/ include/ lib/
+        mkdir -p toolchain/bin toolchain/include toolchain/lib
+        cp llvm-build/bin/clang toolchain/bin/
+        cp llvm-build/bin/clang++ toolchain/bin/
+        cp llvm-build/bin/ld.lld toolchain/bin/
+        ln -sf clang toolchain/bin/freelinix-cc
+        ln -sf clang++ toolchain/bin/freelinix-c++
 
-    - name: Upload Release Artifact
+        # Smoke test üçün env.sh yaradırıq
+        cat << 'EOT' > toolchain/env.sh
+        export PATH="$(dirname "${BASH_SOURCE[0]}")/bin:$PATH"
+        EOT
+
+        tar -czvf freelinix-toolchain-x86_64.tar.gz toolchain/
+
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: freelinix-toolchain
