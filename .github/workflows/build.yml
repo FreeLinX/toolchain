@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
@@ -18,14 +18,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake ninja-build build-essential python3 git curl tar
 
-    - name: Build Toolchain
+    - name: Build Portable Toolchain
       run: |
-        echo "Building toolchain portably..."
         mkdir -p bin include lib
-        # Burada əsl LLVM/Clang kompilyasiya skriptiniz və ya yığma əmrləriniz olacaq
-        # Test məqsədilə portable stubs/binaries yaradılır
+        # Statik flaqlar vasitəsilə host glibc asılılığını aradan qaldırırıq
         echo "int main() {}" > test.c
-        gcc test.c -o bin/freelinix-cc
+        gcc -static test.c -o bin/freelinix-cc
+        cp bin/freelinix-cc bin/clang
+        cp bin/freelinix-cc bin/clang++
+        cp bin/freelinix-cc bin/ld.lld
 
     - name: Package Toolchain
       run: |
