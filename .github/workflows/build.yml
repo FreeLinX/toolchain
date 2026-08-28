@@ -7,7 +7,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -15,13 +16,11 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build build-essential python3 git curl tar
+        sudo apt-get install -y cmake ninja-build build-essential python3 git tar
 
-    - name: Download and Build LLVM/Clang (Portable)
+    - name: Build Real LLVM/Clang (Portable - GLIBC 2.35)
       run: |
-        # LLVM project-ni endiririk (və ya mövcud submodules/source istifadə edirik)
         git clone --depth 1 --branch llvmorg-18.1.8 https://github.com/llvm/llvm-project.git llvm-project-src
-        
         mkdir -p llvm-build && cd llvm-build
         cmake -G Ninja ../llvm-project-src/llvm \
           -DLLVM_ENABLE_PROJECTS="clang;lld" \
@@ -29,7 +28,6 @@ jobs:
           -DLLVM_TARGETS_TO_BUILD="X86" \
           -DBUILD_SHARED_LIBS=OFF \
           -DLLVM_INCLUDE_TESTS=OFF
-        
         ninja clang lld
 
     - name: Package Toolchain
@@ -41,7 +39,6 @@ jobs:
         ln -sf clang toolchain/bin/freelinix-cc
         ln -sf clang++ toolchain/bin/freelinix-c++
 
-        # Smoke test üçün env.sh yaradırıq
         cat << 'EOT' > toolchain/env.sh
         export PATH="$(dirname "${BASH_SOURCE[0]}")/bin:$PATH"
         EOT
