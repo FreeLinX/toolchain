@@ -42,3 +42,6 @@ FETCH_HEAD
 /freelinix-nm
 /freelinix-ranlib
 /freelinix-strip
+
+# local backups of replaced runtime libraries
+/.backup-*/
